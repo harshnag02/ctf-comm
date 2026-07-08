@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SRV-CORE :: Control</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #070a0c;
+    --panel: #0d1418;
+    --panel-raised: #121b20;
+    --cyan: #4fd8e8;
+    --cyan-dim: #4a7178;
+    --border: #1c2a2f;
+    --red: #ff5a5a;
+    --text: #cfeef2;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin:0; padding:0; height:100%; background: var(--bg); color: var(--text); font-family: 'IBM Plex Mono', monospace; }
+  body { display:flex; }
+
+  /* ---------- Login ---------- */
+  #login-screen {
+    width:100%; min-height:100vh; display:flex; align-items:center; justify-content:center;
+  }
+  .login-box { width:100%; max-width: 380px; padding: 28px; border:1px solid var(--border); background: var(--panel); }
+  .login-title { color: var(--cyan); font-weight:700; font-size:14px; letter-spacing:0.08em; margin-bottom:6px; }
+  .login-sub { color: var(--cyan-dim); font-size:11px; margin-bottom:20px; }
+  label { display:block; font-size:11px; color: var(--cyan-dim); margin-bottom:6px; }
+  input {
+    width:100%; background: var(--panel-raised); border:1px solid var(--border); color: var(--text);
+    font-family: inherit; font-size:13px; padding:9px 10px; margin-bottom:16px; outline:none;
+  }
+  input:focus { border-color: var(--cyan-dim); }
+  button.primary {
+    width:100%; background: var(--cyan); color:#03181c; border:none; font-weight:700;
+    font-family: inherit; font-size:12px; letter-spacing:0.08em; padding:11px; cursor:pointer;
+  }
+  button.primary:hover { background:#78e6f2; }
+  .err { color: var(--red); font-size:12px; margin: -8px 0 12px; min-height:14px; }
+
+  /* ---------- Dashboard ---------- */
+  #dash { display:none; width:100%; height:100vh; }
+  .sidebar {
+    width: 280px; min-width:280px; border-right:1px solid var(--border); background: var(--panel);
+    display:flex; flex-direction:column;
+  }
+  .sidebar-header {
+    padding: 16px 16px 12px; border-bottom:1px solid var(--border);
+    display:flex; justify-content:space-between; align-items:center;
+  }
+  .sidebar-header .title { color: var(--cyan); font-size:12px; font-weight:700; letter-spacing:0.08em; }
+  .btn-new { background:none; border:1px solid var(--cyan-dim); color: var(--cyan); font-family:inherit;
+    font-size:11px; padding:6px 10px; cursor:pointer; }
+  .btn-new:hover { border-color: var(--cyan); }
+  #user-list { flex:1; overflow-y:auto; }
+  .user-item {
+    padding: 12px 16px; border-bottom:1px solid var(--border); cursor:pointer; font-size:12.5px;
+  }
+  .user-item:hover { background: var(--panel-raised); }
+  .user-item.active { background: var(--panel-raised); border-left: 2px solid var(--cyan); }
+  .user-item .row1 { display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; }
+  .user-item .uname { color: var(--text); font-weight:600; }
+  .user-item .dot { width:6px; height:6px; border-radius:50%; background:#3a4a4d; display:inline-block; margin-right:6px; }
+  .user-item .dot.online { background: var(--cyan); box-shadow:0 0 5px var(--cyan); }
+  .user-item .preview { color: var(--cyan-dim); font-size:11px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+  .main { flex:1; display:flex; flex-direction:column; }
+  .main-header {
+    padding: 14px 24px; border-bottom:1px solid var(--border); font-size:12px; color: var(--cyan-dim);
+    display:flex; justify-content:space-between; align-items:center;
+  }
+  .main-header .label { color: var(--text); font-weight:600; font-size:13px; }
+  #thread { flex:1; overflow-y:auto; padding:20px 24px; }
+  .empty-state { color: var(--cyan-dim); font-size:12px; padding: 40px 24px; text-align:center; }
+
+  .msg { margin-bottom:14px; max-width:70%; }
+  .msg .meta { font-size:10px; color: var(--cyan-dim); margin-bottom:3px; }
+  .msg .bubble { padding:9px 12px; font-size:13px; line-height:1.5; white-space:pre-wrap; word-break:break-word; }
+  .msg.client { margin-right:auto; }
+  .msg.client .bubble { background: var(--panel-raised); border:1px solid var(--border); }
+  .msg.server { margin-left:auto; }
+  .msg.server .bubble { background: rgba(79,216,232,0.08); border:1px solid var(--cyan-dim); color: var(--cyan); }
+
+  .reply-row { border-top:1px solid var(--border); padding:14px 24px; display:flex; gap:10px; }
+  #reply-input {
+    flex:1; background: var(--panel-raised); border:1px solid var(--border); color: var(--text);
+    font-family:inherit; font-size:13px; padding:10px 12px; outline:none; resize:none;
+  }
+  #reply-input:focus { border-color: var(--cyan-dim); }
+  #send-btn {
+    background: var(--cyan); color:#03181c; border:none; font-weight:700; font-family:inherit;
+    font-size:12px; padding: 0 20px; cursor:pointer; letter-spacing:0.05em;
+  }
+  #send-btn:hover { background:#78e6f2; }
+  #send-btn:disabled { opacity:0.4; cursor:not-allowed; }
+
+  /* ---------- New user modal ---------- */
+  .modal-overlay {
+    display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6);
+    align-items:center; justify-content:center; z-index:100;
+  }
+  .modal-overlay.show { display:flex; }
+  .modal {
+    width:100%; max-width:340px; background: var(--panel); border:1px solid var(--border); padding:22px;
+  }
+  .modal .title { color: var(--cyan); font-weight:700; font-size:13px; margin-bottom:16px; letter-spacing:0.05em; }
+  .modal-actions { display:flex; gap:10px; margin-top:6px; }
+  .btn-cancel {
+    flex:1; background:none; border:1px solid var(--border); color: var(--cyan-dim); font-family:inherit;
+    padding:10px; cursor:pointer; font-size:12px;
+  }
+  .btn-create { flex:1; background: var(--cyan); color:#03181c; border:none; font-family:inherit; font-weight:700; padding:10px; cursor:pointer; font-size:12px; }
+</style>
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-title">SRV-CORE :: CONTROL ACCESS</div>
+    <div class="login-sub">Operator authentication required.</div>
+    <label>OPERATOR ID</label>
+    <input id="a-user" autocomplete="off" />
+    <label>PASSWORD</label>
+    <input id="a-pass" type="password" autocomplete="off" />
+    <div class="err" id="a-err"></div>
+    <button class="primary" id="a-login-btn">SIGN IN</button>
+  </div>
+</div>
+
+<div id="dash">
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <span class="title">SESSIONS</span>
+      <button class="btn-new" id="new-user-btn">+ NEW USER</button>
+    </div>
+    <div id="user-list"></div>
+  </div>
+  <div class="main">
+    <div class="main-header">
+      <span class="label" id="active-label">Select a session</span>
+      <span id="active-uname"></span>
+    </div>
+    <div id="thread"><div class="empty-state">No session selected. Choose a user on the left, or create one.</div></div>
+    <div class="reply-row">
+      <textarea id="reply-input" rows="1" placeholder="Type response to send as SERVER..." disabled></textarea>
+      <button id="send-btn" disabled>SEND</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <div class="title">CREATE NEW USER</div>
+    <label>Username (login id)</label>
+    <input id="nu-username" autocomplete="off" />
+    <label>Password</label>
+    <input id="nu-password" autocomplete="off" />
+    <label>Label (display name, optional)</label>
+    <input id="nu-label" autocomplete="off" />
+    <div class="err" id="nu-err"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="nu-cancel">Cancel</button>
+      <button class="btn-create" id="nu-create">Create</button>
+    </div>
+  </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+  let token = null;
+  let socket = null;
+  let activeUser = null;
+  let userCache = {};
+
+  const loginScreen = document.getElementById('login-screen');
+  const dash = document.getElementById('dash');
+
+  document.getElementById('a-login-btn').addEventListener('click', doLogin);
+  document.getElementById('a-pass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+
+  async function doLogin() {
+    const username = document.getElementById('a-user').value.trim();
+    const password = document.getElementById('a-pass').value;
+    const errEl = document.getElementById('a-err');
+    errEl.textContent = '';
+    try {
+      const res = await fetch('/api/admin/login', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ username, password })
+      });
+      const data = await res.json();
+      if (!res.ok) { errEl.textContent = data.error || 'Login failed'; return; }
+      token = data.token;
+      loginScreen.style.display = 'none';
+      dash.style.display = 'flex';
+      connectSocket();
+      loadUsers();
+    } catch (e) {
+      errEl.textContent = 'Connection error.';
+    }
+  }
+
+  function authHeaders() {
+    return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token };
+  }
+
+  function connectSocket() {
+    socket = io();
+    socket.on('connect', () => socket.emit('auth', { token, role: 'admin' }));
+    socket.on('admin:new-message', ({ username, entry }) => {
+      if (!userCache[username]) userCache[username] = { thread: [] };
+      userCache[username].thread = userCache[username].thread || [];
+      userCache[username].thread.push(entry);
+      loadUsers();
+      if (activeUser === username) renderThread(username);
+    });
+    socket.on('admin:thread-updated', ({ username, entry }) => {
+      if (activeUser === username) {
+        // already appended locally on send; ignore duplicate render trigger
+      }
+    });
+    socket.on('admin:presence', ({ username, online }) => {
+      loadUsers();
+    });
+  }
+
+  async function loadUsers() {
+    const res = await fetch('/api/admin/users', { headers: authHeaders() });
+    if (!res.ok) return;
+    const list = await res.json();
+    renderUserList(list);
+  }
+
+  function renderUserList(list) {
+    const el = document.getElementById('user-list');
+    el.innerHTML = '';
+    list.forEach(u => {
+      const div = document.createElement('div');
+      div.className = 'user-item' + (activeUser === u.username ? ' active' : '');
+      div.innerHTML = `
+        <div class="row1">
+          <span class="uname"><span class="dot ${u.online ? 'online' : ''}"></span>${escapeHtml(u.label)}</span>
+        </div>
+        <div class="preview">${u.lastMessage ? escapeHtml(u.lastMessage) : 'No messages yet'}</div>
+      `;
+      div.addEventListener('click', () => selectUser(u.username, u.label));
+      el.appendChild(div);
+    });
+  }
+
+  async function selectUser(username, label) {
+    activeUser = username;
+    document.getElementById('active-label').textContent = label;
+    document.getElementById('active-uname').textContent = '@' + username;
+    document.getElementById('reply-input').disabled = false;
+    document.getElementById('send-btn').disabled = false;
+    const res = await fetch('/api/admin/messages/' + encodeURIComponent(username), { headers: authHeaders() });
+    const thread = await res.json();
+    userCache[username] = { thread };
+    renderThread(username);
+    loadUsers();
+  }
+
+  function renderThread(username) {
+    const thread = (userCache[username] && userCache[username].thread) || [];
+    const el = document.getElementById('thread');
+    if (thread.length === 0) {
+      el.innerHTML = '<div class="empty-state">No messages yet in this session.</div>';
+      return;
+    }
+    el.innerHTML = '';
+    thread.forEach(m => {
+      const div = document.createElement('div');
+      div.className = 'msg ' + (m.from === 'client' ? 'client' : 'server');
+      const time = new Date(m.ts).toLocaleTimeString();
+      div.innerHTML = `<div class="meta">${m.from === 'client' ? 'RECEIVED' : 'SENT'} · ${time}</div><div class="bubble">${escapeHtml(m.text)}</div>`;
+      el.appendChild(div);
+    });
+    el.scrollTop = el.scrollHeight;
+  }
+
+  document.getElementById('send-btn').addEventListener('click', sendReply);
+  document.getElementById('reply-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendReply(); }
+  });
+
+  async function sendReply() {
+    const input = document.getElementById('reply-input');
+    const text = input.value.trim();
+    if (!text || !activeUser) return;
+    const res = await fetch('/api/admin/reply', {
+      method: 'POST', headers: authHeaders(),
+      body: JSON.stringify({ username: activeUser, text })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      if (!userCache[activeUser]) userCache[activeUser] = { thread: [] };
+      userCache[activeUser].thread.push(data.entry);
+      renderThread(activeUser);
+      input.value = '';
+      loadUsers();
+    }
+  }
+
+  // ---------- New user modal ----------
+  const overlay = document.getElementById('modal-overlay');
+  document.getElementById('new-user-btn').addEventListener('click', () => {
+    document.getElementById('nu-username').value = '';
+    document.getElementById('nu-password').value = '';
+    document.getElementById('nu-label').value = '';
+    document.getElementById('nu-err').textContent = '';
+    overlay.classList.add('show');
+  });
+  document.getElementById('nu-cancel').addEventListener('click', () => overlay.classList.remove('show'));
+  document.getElementById('nu-create').addEventListener('click', async () => {
+    const username = document.getElementById('nu-username').value.trim();
+    const password = document.getElementById('nu-password').value;
+    const label = document.getElementById('nu-label').value.trim();
+    const errEl = document.getElementById('nu-err');
+    if (!username || !password) { errEl.textContent = 'Username and password required.'; return; }
+    const res = await fetch('/api/admin/users', {
+      method: 'POST', headers: authHeaders(),
+      body: JSON.stringify({ username, password, label })
+    });
+    const data = await res.json();
+    if (!res.ok) { errEl.textContent = data.error || 'Could not create user.'; return; }
+    overlay.classList.remove('show');
+    loadUsers();
+  });
+
+  function escapeHtml(str) {
+    const d = document.createElement('div');
+    d.innerText = str;
+    return d.innerHTML;
+  }
+</script>
+</body>
+</html>
