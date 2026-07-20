@@ -28,8 +28,22 @@ const messages = {};
 // tokens
 const adminTokens = new Set();
 const clientTokens = {}; // token -> username
-// online tracking: username -> socketId (or 'admin' room presence)
-const onlineClients = new Set();
+// online tracking: username -> number of active sockets
+const onlineCounts = {};
+function markOnline(username) {
+  onlineCounts[username] = (onlineCounts[username] || 0) + 1;
+  io.to('admin-room').emit('admin:presence', { username, online: true });
+}
+function markOffline(username) {
+  if (!onlineCounts[username]) return;
+  onlineCounts[username] -= 1;
+  if (onlineCounts[username] <= 0) {
+    delete onlineCounts[username];
+    io.to('admin-room').emit('admin:presence', { username, online: false });
+    io.to('admin-room').emit('rtc:end', { username, kind: 'screen' });
+    io.to('admin-room').emit('rtc:end', { username, kind: 'call' });
+  }
+}
 
 function newToken() {
   return crypto.randomBytes(24).toString('hex');
@@ -76,7 +90,7 @@ app.get('/api/admin/users', requireAdmin, (req, res) => {
     return {
       username,
       label: users[username].label,
-      online: onlineClients.has(username),
+      online: !!onlineCounts[username],
       messageCount: thread.length,
       lastMessage: last ? last.text : null,
       lastTs: last ? last.ts : null,
@@ -141,8 +155,7 @@ io.on('connection', (socket) => {
       if (username) {
         boundUsername = username;
         socket.join(`user-${username}`);
-        onlineClients.add(username);
-        io.to('admin-room').emit('admin:presence', { username, online: true });
+        markOnline(username);
         socket.emit('auth:ok');
       } else {
         socket.emit('auth:fail');
@@ -157,10 +170,58 @@ io.on('connection', (socket) => {
     io.to('admin-room').emit('admin:new-message', { username: boundUsername, entry });
   });
 
+  // ---- Latency probe ----
+  socket.on('ping:check', (clientTs, cb) => {
+    if (typeof cb === 'function') cb(clientTs);
+  });
+
+  // ---- WebRTC signaling relay (screen share + video call) ----
+  // kind: 'screen' | 'call'
+  socket.on('rtc:request', ({ username, kind }) => {
+    if (!isAdmin || !username) return;
+    io.to(`user-${username}`).emit('rtc:request', { kind });
+  });
+
+  socket.on('rtc:response', ({ kind, accepted }) => {
+    if (!boundUsername) return;
+    io.to('admin-room').emit('rtc:response', { username: boundUsername, kind, accepted });
+  });
+
+  socket.on('rtc:offer', ({ username, kind, sdp }) => {
+    if (isAdmin && username) {
+      io.to(`user-${username}`).emit('rtc:offer', { kind, sdp, from: 'admin' });
+    } else if (!isAdmin && boundUsername) {
+      io.to('admin-room').emit('rtc:offer', { username: boundUsername, kind, sdp, from: 'client' });
+    }
+  });
+
+  socket.on('rtc:answer', ({ username, kind, sdp }) => {
+    if (isAdmin && username) {
+      io.to(`user-${username}`).emit('rtc:answer', { kind, sdp, from: 'admin' });
+    } else if (!isAdmin && boundUsername) {
+      io.to('admin-room').emit('rtc:answer', { username: boundUsername, kind, sdp, from: 'client' });
+    }
+  });
+
+  socket.on('rtc:ice', ({ username, kind, candidate }) => {
+    if (isAdmin && username) {
+      io.to(`user-${username}`).emit('rtc:ice', { kind, candidate, from: 'admin' });
+    } else if (!isAdmin && boundUsername) {
+      io.to('admin-room').emit('rtc:ice', { username: boundUsername, kind, candidate, from: 'client' });
+    }
+  });
+
+  socket.on('rtc:end', ({ username, kind }) => {
+    if (isAdmin && username) {
+      io.to(`user-${username}`).emit('rtc:end', { kind });
+    } else if (!isAdmin && boundUsername) {
+      io.to('admin-room').emit('rtc:end', { username: boundUsername, kind });
+    }
+  });
+
   socket.on('disconnect', () => {
     if (boundUsername) {
-      onlineClients.delete(boundUsername);
-      io.to('admin-room').emit('admin:presence', { username: boundUsername, online: false });
+      markOffline(boundUsername);
     }
   });
 });
