@@ -8,75 +8,105 @@
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #070a0c;
-    --panel: #0d1418;
-    --panel-raised: #121b20;
+    --bg: #070b0d;
+    --panel: #0d1417;
+    --panel-raised: #121b1f;
+    --panel-hi: #162327;
     --cyan: #4fd8e8;
+    --cyan-bright: #9df3fa;
     --cyan-dim: #4a7178;
+    --cyan-faint: #234148;
     --border: #1c2a2f;
     --red: #ff5a5a;
+    --green: #4fe8a0;
     --text: #cfeef2;
   }
   * { box-sizing: border-box; }
-  html, body { margin:0; padding:0; height:100%; background: var(--bg); color: var(--text); font-family: 'IBM Plex Mono', monospace; }
-  body { display:flex; }
+  html, body { margin:0; padding:0; height:100%; background: var(--bg); color: var(--text); font-family:'IBM Plex Mono', monospace; }
+  body { display:flex; overflow:hidden; }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
+  }
+
+  /* ---------- animated background ---------- */
+  #bg-grid {
+    position: fixed; inset:0; z-index:0; pointer-events:none;
+    background-image: linear-gradient(rgba(79,216,232,0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(79,216,232,0.035) 1px, transparent 1px);
+    background-size: 46px 46px; animation: driftGrid 20s linear infinite;
+  }
+  @keyframes driftGrid { from { background-position: 0 0, 0 0; } to { background-position: 0 460px, 460px 0; } }
+  #bg-glow { position:fixed; inset:0; z-index:0; pointer-events:none; background: radial-gradient(ellipse 1000px 500px at 15% -10%, rgba(79,216,232,0.08), transparent 60%); }
+
+  #app { position:relative; z-index:1; width:100%; height:100%; display:flex; }
 
   /* ---------- Login ---------- */
-  #login-screen {
-    width:100%; min-height:100vh; display:flex; align-items:center; justify-content:center;
-  }
-  .login-box { width:100%; max-width: 380px; padding: 28px; border:1px solid var(--border); background: var(--panel); }
+  #login-screen { width:100%; min-height:100vh; display:flex; align-items:center; justify-content:center; }
+  .login-box { width:100%; max-width: 380px; padding: 28px; border:1px solid var(--border); background: rgba(13,20,23,0.85); backdrop-filter: blur(4px); animation: fadeUp 0.4s ease both; }
+  @keyframes fadeUp { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform: translateY(0); } }
   .login-title { color: var(--cyan); font-weight:700; font-size:14px; letter-spacing:0.08em; margin-bottom:6px; }
   .login-sub { color: var(--cyan-dim); font-size:11px; margin-bottom:20px; }
   label { display:block; font-size:11px; color: var(--cyan-dim); margin-bottom:6px; }
-  input {
+  input, textarea {
     width:100%; background: var(--panel-raised); border:1px solid var(--border); color: var(--text);
-    font-family: inherit; font-size:13px; padding:9px 10px; margin-bottom:16px; outline:none;
+    font-family: inherit; font-size:13px; padding:9px 10px; margin-bottom:16px; outline:none; transition: border-color 0.15s;
   }
-  input:focus { border-color: var(--cyan-dim); }
+  input:focus, textarea:focus { border-color: var(--cyan-dim); box-shadow: 0 0 0 3px rgba(79,216,232,0.08); }
   button.primary {
     width:100%; background: var(--cyan); color:#03181c; border:none; font-weight:700;
-    font-family: inherit; font-size:12px; letter-spacing:0.08em; padding:11px; cursor:pointer;
+    font-family: inherit; font-size:12px; letter-spacing:0.08em; padding:11px; cursor:pointer; transition: background 0.15s, transform 0.1s;
   }
-  button.primary:hover { background:#78e6f2; }
+  button.primary:hover { background: var(--cyan-bright); }
+  button.primary:active { transform: scale(0.98); }
   .err { color: var(--red); font-size:12px; margin: -8px 0 12px; min-height:14px; }
 
   /* ---------- Dashboard ---------- */
   #dash { display:none; width:100%; height:100vh; }
-  .sidebar {
-    width: 280px; min-width:280px; border-right:1px solid var(--border); background: var(--panel);
-    display:flex; flex-direction:column;
-  }
-  .sidebar-header {
-    padding: 16px 16px 12px; border-bottom:1px solid var(--border);
-    display:flex; justify-content:space-between; align-items:center;
-  }
-  .sidebar-header .title { color: var(--cyan); font-size:12px; font-weight:700; letter-spacing:0.08em; }
-  .btn-new { background:none; border:1px solid var(--cyan-dim); color: var(--cyan); font-family:inherit;
-    font-size:11px; padding:6px 10px; cursor:pointer; }
-  .btn-new:hover { border-color: var(--cyan); }
+  .sidebar { width: 300px; min-width:300px; border-right:1px solid var(--border); background: rgba(13,20,23,0.7); display:flex; flex-direction:column; }
+  .sidebar-header { padding: 16px 16px 12px; border-bottom:1px solid var(--border); }
+  .sidebar-header .top-row { display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px; }
+  .title { color: var(--cyan); font-size:12px; font-weight:700; letter-spacing:0.08em; }
+  .btn-new { background:none; border:1px solid var(--cyan-dim); color: var(--cyan); font-family:inherit; font-size:11px; padding:6px 10px; cursor:pointer; transition: all 0.15s; }
+  .btn-new:hover { border-color: var(--cyan); background: rgba(79,216,232,0.06); }
+  #search-input { margin-bottom: 10px; font-size:12px; padding: 7px 9px; }
+  .filter-tabs { display:flex; gap:6px; }
+  .filter-tab { flex:1; text-align:center; font-size:10px; letter-spacing:0.04em; padding: 5px; border:1px solid var(--border); color: var(--cyan-dim); cursor:pointer; transition: all 0.15s; }
+  .filter-tab.active { border-color: var(--cyan-dim); color: var(--cyan); background: rgba(79,216,232,0.06); }
+
   #user-list { flex:1; overflow-y:auto; }
-  .user-item {
-    padding: 12px 16px; border-bottom:1px solid var(--border); cursor:pointer; font-size:12.5px;
-  }
+  .user-item { padding: 12px 16px; border-bottom:1px solid var(--border); cursor:pointer; font-size:12.5px; transition: background 0.12s; position:relative; }
   .user-item:hover { background: var(--panel-raised); }
-  .user-item.active { background: var(--panel-raised); border-left: 2px solid var(--cyan); }
+  .user-item.active { background: var(--panel-hi); border-left: 2px solid var(--cyan); }
   .user-item .row1 { display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; }
   .user-item .uname { color: var(--text); font-weight:600; }
   .user-item .dot { width:6px; height:6px; border-radius:50%; background:#3a4a4d; display:inline-block; margin-right:6px; }
-  .user-item .dot.online { background: var(--cyan); box-shadow:0 0 5px var(--cyan); }
-  .user-item .preview { color: var(--cyan-dim); font-size:11px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .user-item .dot.online { background: var(--green); box-shadow:0 0 5px var(--green); animation: pulseDot 2s ease-in-out infinite; }
+  @keyframes pulseDot { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+  .user-item .preview { color: var(--cyan-dim); font-size:11px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding-right: 24px; }
+  .unread-badge { position:absolute; right:14px; top:12px; background: var(--red); color:#1a0000; font-size:10px; font-weight:700; padding: 1px 6px; border-radius: 10px; }
+  .empty-list { padding: 30px 16px; color: var(--cyan-dim); font-size:11px; text-align:center; }
 
-  .main { flex:1; display:flex; flex-direction:column; }
-  .main-header {
-    padding: 14px 24px; border-bottom:1px solid var(--border); font-size:12px; color: var(--cyan-dim);
-    display:flex; justify-content:space-between; align-items:center;
-  }
+  .main { flex:1; display:flex; flex-direction:column; min-width:0; }
+  .main-header { padding: 14px 24px; border-bottom:1px solid var(--border); font-size:12px; color: var(--cyan-dim); display:flex; justify-content:space-between; align-items:center; background: rgba(13,20,23,0.5); }
   .main-header .label { color: var(--text); font-weight:600; font-size:13px; }
+  .header-actions { display:flex; gap: 8px; }
+  .action-btn { background: none; border:1px solid var(--border); color: var(--cyan-dim); font-family:inherit; font-size:10.5px; letter-spacing:0.03em; padding: 6px 10px; cursor:pointer; transition: all 0.15s; }
+  .action-btn:hover { border-color: var(--cyan-dim); color: var(--cyan); }
+  .action-btn.live { border-color: var(--red); color: var(--red); }
+
+  #media-panel { display:none; border-bottom:1px solid var(--border); padding: 14px 24px; background: rgba(13,20,23,0.5); }
+  #media-panel .row { display:flex; gap:12px; flex-wrap:wrap; }
+  #media-panel video { background:#000; border:1px solid var(--border); }
+  #media-panel video.screen-view { width: 420px; max-width: 60vw; }
+  #media-panel video.cam-view { width: 200px; max-width: 40vw; }
+  #media-panel .label { font-size:10px; color: var(--cyan-dim); margin-bottom:4px; letter-spacing:0.05em; }
+  #media-controls { margin-top:10px; display:flex; gap:8px; }
+
   #thread { flex:1; overflow-y:auto; padding:20px 24px; }
   .empty-state { color: var(--cyan-dim); font-size:12px; padding: 40px 24px; text-align:center; }
 
-  .msg { margin-bottom:14px; max-width:70%; }
+  .msg { margin-bottom:14px; max-width:70%; animation: msgIn 0.2s ease both; }
+  @keyframes msgIn { from { opacity:0; transform: translateY(4px); } to { opacity:1; transform: translateY(0); } }
   .msg .meta { font-size:10px; color: var(--cyan-dim); margin-bottom:3px; }
   .msg .bubble { padding:9px 12px; font-size:13px; line-height:1.5; white-space:pre-wrap; word-break:break-word; }
   .msg.client { margin-right:auto; }
@@ -84,39 +114,35 @@
   .msg.server { margin-left:auto; }
   .msg.server .bubble { background: rgba(79,216,232,0.08); border:1px solid var(--cyan-dim); color: var(--cyan); }
 
+  .quick-replies { display:flex; gap:6px; padding: 10px 24px 0; flex-wrap:wrap; }
+  .qr-chip { font-size:10.5px; border:1px solid var(--border); color: var(--cyan-dim); padding: 5px 9px; cursor:pointer; transition: all 0.15s; background:none; font-family:inherit; }
+  .qr-chip:hover { border-color: var(--cyan-dim); color: var(--cyan); }
+
   .reply-row { border-top:1px solid var(--border); padding:14px 24px; display:flex; gap:10px; }
-  #reply-input {
-    flex:1; background: var(--panel-raised); border:1px solid var(--border); color: var(--text);
-    font-family:inherit; font-size:13px; padding:10px 12px; outline:none; resize:none;
-  }
-  #reply-input:focus { border-color: var(--cyan-dim); }
-  #send-btn {
-    background: var(--cyan); color:#03181c; border:none; font-weight:700; font-family:inherit;
-    font-size:12px; padding: 0 20px; cursor:pointer; letter-spacing:0.05em;
-  }
-  #send-btn:hover { background:#78e6f2; }
+  #reply-input { flex:1; background: var(--panel-raised); border:1px solid var(--border); color: var(--text); font-family:inherit; font-size:13px; padding:10px 12px; outline:none; resize:none; margin-bottom:0; }
+  #send-btn { background: var(--cyan); color:#03181c; border:none; font-weight:700; font-family:inherit; font-size:12px; padding: 0 20px; cursor:pointer; letter-spacing:0.05em; transition: background 0.15s; }
+  #send-btn:hover { background: var(--cyan-bright); }
   #send-btn:disabled { opacity:0.4; cursor:not-allowed; }
 
-  /* ---------- New user modal ---------- */
-  .modal-overlay {
-    display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6);
-    align-items:center; justify-content:center; z-index:100;
-  }
+  /* ---------- modals ---------- */
+  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); align-items:center; justify-content:center; z-index:100; }
   .modal-overlay.show { display:flex; }
-  .modal {
-    width:100%; max-width:340px; background: var(--panel); border:1px solid var(--border); padding:22px;
-  }
+  .modal { width:100%; max-width:340px; background: var(--panel); border:1px solid var(--border); padding:22px; animation: fadeUp 0.25s ease both; }
   .modal .title { color: var(--cyan); font-weight:700; font-size:13px; margin-bottom:16px; letter-spacing:0.05em; }
   .modal-actions { display:flex; gap:10px; margin-top:6px; }
-  .btn-cancel {
-    flex:1; background:none; border:1px solid var(--border); color: var(--cyan-dim); font-family:inherit;
-    padding:10px; cursor:pointer; font-size:12px;
-  }
+  .btn-cancel { flex:1; background:none; border:1px solid var(--border); color: var(--cyan-dim); font-family:inherit; padding:10px; cursor:pointer; font-size:12px; }
   .btn-create { flex:1; background: var(--cyan); color:#03181c; border:none; font-family:inherit; font-weight:700; padding:10px; cursor:pointer; font-size:12px; }
+
+  /* toast */
+  #toast { position:fixed; bottom: 20px; right:20px; z-index:300; display:flex; flex-direction:column; gap:8px; }
+  .toast-item { background: var(--panel-hi); border:1px solid var(--cyan-dim); color: var(--cyan); font-size:12px; padding: 10px 14px; animation: fadeUp 0.2s ease both; max-width: 280px; }
 </style>
 </head>
 <body>
+<div id="bg-grid"></div>
+<div id="bg-glow"></div>
 
+<div id="app">
 <div id="login-screen">
   <div class="login-box">
     <div class="login-title">SRV-CORE :: CONTROL ACCESS</div>
@@ -133,22 +159,42 @@
 <div id="dash">
   <div class="sidebar">
     <div class="sidebar-header">
-      <span class="title">SESSIONS</span>
-      <button class="btn-new" id="new-user-btn">+ NEW USER</button>
+      <div class="top-row">
+        <span class="title">SESSIONS</span>
+        <button class="btn-new" id="new-user-btn">+ NEW USER</button>
+      </div>
+      <input id="search-input" placeholder="Search sessions..." autocomplete="off" />
+      <div class="filter-tabs">
+        <div class="filter-tab active" data-filter="all">ALL</div>
+        <div class="filter-tab" data-filter="online">ONLINE</div>
+        <div class="filter-tab" data-filter="unread">UNREAD</div>
+      </div>
     </div>
     <div id="user-list"></div>
   </div>
   <div class="main">
     <div class="main-header">
-      <span class="label" id="active-label">Select a session</span>
-      <span id="active-uname"></span>
+      <div><span class="label" id="active-label">Select a session</span> <span id="active-uname"></span></div>
+      <div class="header-actions" id="header-actions" style="display:none;">
+        <button class="action-btn" id="btn-screen">REQUEST SCREEN</button>
+        <button class="action-btn" id="btn-call">REQUEST VIDEO CALL</button>
+        <button class="action-btn" id="btn-export">EXPORT LOG</button>
+      </div>
     </div>
+
+    <div id="media-panel">
+      <div class="row" id="media-row"></div>
+      <div id="media-controls"></div>
+    </div>
+
     <div id="thread"><div class="empty-state">No session selected. Choose a user on the left, or create one.</div></div>
+    <div class="quick-replies" id="quick-replies" style="display:none;"></div>
     <div class="reply-row">
       <textarea id="reply-input" rows="1" placeholder="Type response to send as SERVER..." disabled></textarea>
       <button id="send-btn" disabled>SEND</button>
     </div>
   </div>
+</div>
 </div>
 
 <div class="modal-overlay" id="modal-overlay">
@@ -168,12 +214,36 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="rtc-req-overlay">
+  <div class="modal">
+    <div class="title" id="rtc-req-title">AWAITING RESPONSE</div>
+    <div style="font-size:12px; color: var(--cyan-dim); margin-bottom: 16px;" id="rtc-req-body">Waiting for the participant to accept...</div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="rtc-req-cancel">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
 <script src="/socket.io/socket.io.js"></script>
 <script>
   let token = null;
   let socket = null;
   let activeUser = null;
   let userCache = {};
+  let unreadCounts = {};
+  let onlineSet = new Set();
+  let currentFilter = 'all';
+  let searchTerm = '';
+
+  const DEFAULT_QUICK_REPLIES = [
+    'STATUS 200: Request received. Awaiting next input.',
+    'ERROR 403: Access denied. Re-authenticate and try again.',
+    'STATUS 202: Processing. Stand by for further instructions.',
+    'ERROR 500: Internal fault detected. Retry your last action.',
+    'STATUS 100: Continue. Proceed to next step.'
+  ];
 
   const loginScreen = document.getElementById('login-screen');
   const dash = document.getElementById('dash');
@@ -181,19 +251,28 @@
   document.getElementById('a-login-btn').addEventListener('click', doLogin);
   document.getElementById('a-pass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
 
+  window.addEventListener('load', () => {
+    const saved = sessionStorage.getItem('srv_admin_token');
+    if (saved) {
+      token = saved;
+      loginScreen.style.display = 'none';
+      dash.style.display = 'flex';
+      connectSocket();
+      loadUsers();
+    }
+  });
+
   async function doLogin() {
     const username = document.getElementById('a-user').value.trim();
     const password = document.getElementById('a-pass').value;
     const errEl = document.getElementById('a-err');
     errEl.textContent = '';
     try {
-      const res = await fetch('/api/admin/login', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ username, password })
-      });
+      const res = await fetch('/api/admin/login', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ username, password }) });
       const data = await res.json();
       if (!res.ok) { errEl.textContent = data.error || 'Login failed'; return; }
       token = data.token;
+      sessionStorage.setItem('srv_admin_token', token);
       loginScreen.style.display = 'none';
       dash.style.display = 'flex';
       connectSocket();
@@ -203,63 +282,106 @@
     }
   }
 
-  function authHeaders() {
-    return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token };
-  }
+  function authHeaders() { return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }; }
 
   function connectSocket() {
     socket = io();
     socket.on('connect', () => socket.emit('auth', { token, role: 'admin' }));
+    socket.on('auth:fail', () => { sessionStorage.removeItem('srv_admin_token'); location.reload(); });
+
     socket.on('admin:new-message', ({ username, entry }) => {
       if (!userCache[username]) userCache[username] = { thread: [] };
-      userCache[username].thread = userCache[username].thread || [];
       userCache[username].thread.push(entry);
+      if (activeUser === username) { renderThread(username); }
+      else { unreadCounts[username] = (unreadCounts[username] || 0) + 1; showToast((userCache[username].label || username) + ': ' + entry.text); beep(); }
       loadUsers();
-      if (activeUser === username) renderThread(username);
-    });
-    socket.on('admin:thread-updated', ({ username, entry }) => {
-      if (activeUser === username) {
-        // already appended locally on send; ignore duplicate render trigger
-      }
     });
     socket.on('admin:presence', ({ username, online }) => {
+      if (online) onlineSet.add(username); else onlineSet.delete(username);
       loadUsers();
     });
+
+    socket.on('rtc:response', ({ username, kind, accepted }) => {
+      document.getElementById('rtc-req-overlay').classList.remove('show');
+      if (!accepted) { showToast('Request declined by ' + username); return; }
+    });
+    socket.on('rtc:offer', async ({ username, kind, sdp }) => { await handleIncomingOffer(username, kind, sdp); });
+    socket.on('rtc:ice', async ({ candidate }) => { if (currentPc && candidate) { try { await currentPc.addIceCandidate(candidate); } catch(e){} } });
+    socket.on('rtc:end', ({ kind }) => teardownMedia());
+  }
+
+  function beep() {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const o = ctx.createOscillator(); const g = ctx.createGain();
+      o.type = 'sine'; o.frequency.value = 880; g.gain.value = 0.05;
+      o.connect(g); g.connect(ctx.destination); o.start(); o.stop(ctx.currentTime + 0.12);
+    } catch(e) {}
+  }
+
+  function showToast(text) {
+    const el = document.createElement('div');
+    el.className = 'toast-item'; el.textContent = text;
+    document.getElementById('toast').appendChild(el);
+    setTimeout(() => el.remove(), 4500);
   }
 
   async function loadUsers() {
     const res = await fetch('/api/admin/users', { headers: authHeaders() });
     if (!res.ok) return;
     const list = await res.json();
+    list.forEach(u => { if (u.online) onlineSet.add(u.username); });
     renderUserList(list);
   }
 
   function renderUserList(list) {
+    let filtered = list.filter(u => {
+      if (searchTerm && !(u.label.toLowerCase().includes(searchTerm) || u.username.toLowerCase().includes(searchTerm))) return false;
+      if (currentFilter === 'online' && !onlineSet.has(u.username)) return false;
+      if (currentFilter === 'unread' && !unreadCounts[u.username]) return false;
+      return true;
+    });
     const el = document.getElementById('user-list');
     el.innerHTML = '';
-    list.forEach(u => {
+    if (filtered.length === 0) { el.innerHTML = '<div class="empty-list">No sessions match.</div>'; return; }
+    filtered.forEach(u => {
       const div = document.createElement('div');
       div.className = 'user-item' + (activeUser === u.username ? ' active' : '');
+      const unread = unreadCounts[u.username] || 0;
       div.innerHTML = `
         <div class="row1">
-          <span class="uname"><span class="dot ${u.online ? 'online' : ''}"></span>${escapeHtml(u.label)}</span>
+          <span class="uname"><span class="dot ${onlineSet.has(u.username) ? 'online' : ''}"></span>${escapeHtml(u.label)}</span>
         </div>
         <div class="preview">${u.lastMessage ? escapeHtml(u.lastMessage) : 'No messages yet'}</div>
+        ${unread ? '<div class="unread-badge">' + unread + '</div>' : ''}
       `;
       div.addEventListener('click', () => selectUser(u.username, u.label));
       el.appendChild(div);
     });
   }
 
+  document.getElementById('search-input').addEventListener('input', (e) => { searchTerm = e.target.value.toLowerCase(); loadUsers(); });
+  document.querySelectorAll('.filter-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      currentFilter = tab.dataset.filter;
+      loadUsers();
+    });
+  });
+
   async function selectUser(username, label) {
     activeUser = username;
+    unreadCounts[username] = 0;
     document.getElementById('active-label').textContent = label;
     document.getElementById('active-uname').textContent = '@' + username;
     document.getElementById('reply-input').disabled = false;
     document.getElementById('send-btn').disabled = false;
+    document.getElementById('header-actions').style.display = 'flex';
+    renderQuickReplies();
     const res = await fetch('/api/admin/messages/' + encodeURIComponent(username), { headers: authHeaders() });
     const thread = await res.json();
-    userCache[username] = { thread };
+    userCache[username] = { thread, label };
     renderThread(username);
     loadUsers();
   }
@@ -267,10 +389,7 @@
   function renderThread(username) {
     const thread = (userCache[username] && userCache[username].thread) || [];
     const el = document.getElementById('thread');
-    if (thread.length === 0) {
-      el.innerHTML = '<div class="empty-state">No messages yet in this session.</div>';
-      return;
-    }
+    if (thread.length === 0) { el.innerHTML = '<div class="empty-state">No messages yet in this session.</div>'; return; }
     el.innerHTML = '';
     thread.forEach(m => {
       const div = document.createElement('div');
@@ -282,19 +401,31 @@
     el.scrollTop = el.scrollHeight;
   }
 
+  function renderQuickReplies() {
+    let custom = [];
+    try { custom = JSON.parse(localStorage.getItem('srv_quick_replies') || '[]'); } catch(e) {}
+    const all = DEFAULT_QUICK_REPLIES.concat(custom);
+    const el = document.getElementById('quick-replies');
+    el.style.display = 'flex';
+    el.innerHTML = '';
+    all.forEach(text => {
+      const chip = document.createElement('button');
+      chip.className = 'qr-chip';
+      chip.textContent = text.length > 34 ? text.slice(0, 34) + '…' : text;
+      chip.title = text;
+      chip.addEventListener('click', () => { document.getElementById('reply-input').value = text; document.getElementById('reply-input').focus(); });
+      el.appendChild(chip);
+    });
+  }
+
   document.getElementById('send-btn').addEventListener('click', sendReply);
-  document.getElementById('reply-input').addEventListener('keydown', e => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendReply(); }
-  });
+  document.getElementById('reply-input').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendReply(); } });
 
   async function sendReply() {
     const input = document.getElementById('reply-input');
     const text = input.value.trim();
     if (!text || !activeUser) return;
-    const res = await fetch('/api/admin/reply', {
-      method: 'POST', headers: authHeaders(),
-      body: JSON.stringify({ username: activeUser, text })
-    });
+    const res = await fetch('/api/admin/reply', { method:'POST', headers: authHeaders(), body: JSON.stringify({ username: activeUser, text }) });
     const data = await res.json();
     if (res.ok) {
       if (!userCache[activeUser]) userCache[activeUser] = { thread: [] };
@@ -304,6 +435,17 @@
       loadUsers();
     }
   }
+
+  document.getElementById('btn-export').addEventListener('click', () => {
+    if (!activeUser) return;
+    const thread = (userCache[activeUser] && userCache[activeUser].thread) || [];
+    const lines = thread.map(m => '[' + new Date(m.ts).toISOString() + '] ' + (m.from === 'client' ? 'RECEIVED' : 'SENT') + ': ' + m.text);
+    const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'transcript-' + activeUser + '.txt';
+    a.click();
+  });
 
   // ---------- New user modal ----------
   const overlay = document.getElementById('modal-overlay');
@@ -321,15 +463,96 @@
     const label = document.getElementById('nu-label').value.trim();
     const errEl = document.getElementById('nu-err');
     if (!username || !password) { errEl.textContent = 'Username and password required.'; return; }
-    const res = await fetch('/api/admin/users', {
-      method: 'POST', headers: authHeaders(),
-      body: JSON.stringify({ username, password, label })
-    });
+    const res = await fetch('/api/admin/users', { method:'POST', headers: authHeaders(), body: JSON.stringify({ username, password, label }) });
     const data = await res.json();
     if (!res.ok) { errEl.textContent = data.error || 'Could not create user.'; return; }
     overlay.classList.remove('show');
     loadUsers();
   });
+
+  // ---------- RTC: request screen share / video call ----------
+  const ICE_SERVERS = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }] };
+  let currentPc = null;
+  let currentKind = null;
+  let adminLocalStream = null;
+
+  document.getElementById('btn-screen').addEventListener('click', () => requestRtc('screen'));
+  document.getElementById('btn-call').addEventListener('click', () => requestRtc('call'));
+
+  function requestRtc(kind) {
+    if (!activeUser) return;
+    currentKind = kind;
+    document.getElementById('rtc-req-title').textContent = kind === 'screen' ? 'REQUESTING SCREEN SHARE' : 'REQUESTING VIDEO CALL';
+    document.getElementById('rtc-req-body').textContent = 'Waiting for ' + activeUser + ' to accept the request in their terminal...';
+    document.getElementById('rtc-req-overlay').classList.add('show');
+    socket.emit('rtc:request', { username: activeUser, kind });
+  }
+  document.getElementById('rtc-req-cancel').addEventListener('click', () => {
+    document.getElementById('rtc-req-overlay').classList.remove('show');
+    socket.emit('rtc:end', { username: activeUser, kind: currentKind });
+  });
+
+  async function handleIncomingOffer(username, kind, sdp) {
+    document.getElementById('rtc-req-overlay').classList.remove('show');
+    currentKind = kind;
+    currentPc = new RTCPeerConnection(ICE_SERVERS);
+    currentPc.onicecandidate = (e) => { if (e.candidate) socket.emit('rtc:ice', { username, kind, candidate: e.candidate }); };
+    const remoteStream = new MediaStream();
+    currentPc.ontrack = (e) => { remoteStream.addTrack(e.track); renderMediaPanel(kind, remoteStream, adminLocalStream); };
+
+    if (kind === 'call') {
+      try {
+        adminLocalStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        adminLocalStream.getTracks().forEach(t => currentPc.addTrack(t, adminLocalStream));
+      } catch (e) { showToast('Camera/mic unavailable on this device.'); }
+    }
+
+    await currentPc.setRemoteDescription(sdp);
+    const answer = await currentPc.createAnswer();
+    await currentPc.setLocalDescription(answer);
+    socket.emit('rtc:answer', { username, kind, sdp: answer });
+    renderMediaPanel(kind, remoteStream, adminLocalStream);
+  }
+
+  function renderMediaPanel(kind, remoteStream, localStream) {
+    const panel = document.getElementById('media-panel');
+    const row = document.getElementById('media-row');
+    panel.style.display = 'block';
+    row.innerHTML = '';
+
+    const remoteCol = document.createElement('div');
+    remoteCol.innerHTML = '<div class="label">' + (kind === 'screen' ? 'PARTICIPANT DISPLAY' : 'PARTICIPANT CAMERA') + '</div>';
+    const rv = document.createElement('video');
+    rv.className = kind === 'screen' ? 'screen-view' : 'cam-view';
+    rv.autoplay = true; rv.playsInline = true; rv.srcObject = remoteStream;
+    remoteCol.appendChild(rv); row.appendChild(remoteCol);
+
+    if (kind === 'call' && localStream) {
+      const localCol = document.createElement('div');
+      localCol.innerHTML = '<div class="label">YOUR CAMERA</div>';
+      const lv = document.createElement('video');
+      lv.className = 'cam-view'; lv.autoplay = true; lv.muted = true; lv.playsInline = true; lv.srcObject = localStream;
+      localCol.appendChild(lv); row.appendChild(localCol);
+    }
+
+    const controls = document.getElementById('media-controls');
+    controls.innerHTML = '';
+    const endBtn = document.createElement('button');
+    endBtn.className = 'action-btn live';
+    endBtn.textContent = kind === 'screen' ? 'STOP VIEWING' : 'END CALL';
+    endBtn.addEventListener('click', () => {
+      socket.emit('rtc:end', { username: activeUser, kind });
+      teardownMedia();
+    });
+    controls.appendChild(endBtn);
+  }
+
+  function teardownMedia() {
+    if (currentPc) { currentPc.close(); currentPc = null; }
+    if (adminLocalStream) { adminLocalStream.getTracks().forEach(t => t.stop()); adminLocalStream = null; }
+    document.getElementById('media-panel').style.display = 'none';
+    document.getElementById('rtc-req-overlay').classList.remove('show');
+  }
 
   function escapeHtml(str) {
     const d = document.createElement('div');
