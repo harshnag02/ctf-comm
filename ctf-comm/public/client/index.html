@@ -9,105 +9,157 @@
 <style>
   :root {
     --bg: #0a0806;
-    --bg-raised: #14100c;
+    --bg-raised: #16110a;
+    --bg-panel: #1c150c;
     --amber: #ffb000;
+    --amber-bright: #ffd27a;
     --amber-dim: #8c6a1f;
     --amber-faint: #4a3a15;
-    --red: #d64545;
-    --border: #2a2115;
+    --red: #e5484d;
+    --green: #58d68d;
+    --border: #2e2311;
   }
   * { box-sizing: border-box; }
-  html, body {
-    margin: 0; padding: 0; height: 100%;
-    background: var(--bg);
-    color: var(--amber);
-    font-family: 'IBM Plex Mono', monospace;
-  }
-  body {
-    display: flex; align-items: center; justify-content: center;
-    min-height: 100vh;
-    background-image:
-      radial-gradient(ellipse at center, rgba(255,176,0,0.04) 0%, rgba(0,0,0,0) 70%);
-  }
-  /* scanline overlay */
-  body::before {
-    content: "";
-    position: fixed; inset: 0; pointer-events: none; z-index: 50;
-    background: repeating-linear-gradient(
-      to bottom,
-      rgba(255,176,0,0.025) 0px,
-      rgba(255,176,0,0.025) 1px,
-      transparent 1px,
-      transparent 3px
-    );
+  html, body { margin:0; padding:0; height:100%; background: var(--bg); color: var(--amber); font-family:'IBM Plex Mono', monospace; }
+  body { overflow: hidden; }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
   }
 
+  /* ---------- animated background ---------- */
+  #bg-grid {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background-image:
+      linear-gradient(rgba(255,176,0,0.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,176,0,0.045) 1px, transparent 1px);
+    background-size: 42px 42px;
+    animation: driftGrid 16s linear infinite;
+    opacity: 0.6;
+  }
+  @keyframes driftGrid { from { background-position: 0 0, 0 0; } to { background-position: 0 420px, 420px 0; } }
+  #bg-glow {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background: radial-gradient(ellipse 900px 500px at 50% -10%, rgba(255,176,0,0.10), transparent 60%);
+    animation: pulseGlow 6s ease-in-out infinite;
+  }
+  @keyframes pulseGlow { 0%,100% { opacity: 0.7; } 50% { opacity: 1; } }
+  #scanlines {
+    position: fixed; inset: 0; pointer-events: none; z-index: 50;
+    background: repeating-linear-gradient(to bottom, rgba(255,176,0,0.025) 0px, rgba(255,176,0,0.025) 1px, transparent 1px, transparent 3px);
+  }
+  #vignette {
+    position: fixed; inset: 0; pointer-events: none; z-index: 49;
+    box-shadow: inset 0 0 160px rgba(0,0,0,0.75);
+  }
+
+  .screen { position: relative; z-index: 1; height: 100vh; }
+
+  /* ---------- boot sequence ---------- */
+  #boot-screen {
+    display: flex; align-items: center; justify-content: center; height: 100vh;
+    font-size: 13px; line-height: 1.9;
+  }
+  #boot-log { width: 100%; max-width: 560px; padding: 20px; white-space: pre-wrap; }
+  #boot-log .ok { color: var(--green); }
+  .caret { display:inline-block; width:8px; height:15px; background: var(--amber); animation: blink 1s step-end infinite; vertical-align: -2px; }
+  @keyframes blink { 50% { opacity: 0; } }
+
   /* ---------- Login screen ---------- */
-  .login-wrap {
-    width: 100%; max-width: 460px; padding: 32px;
-  }
-  .banner {
-    font-size: 12px; color: var(--amber-dim); line-height: 1.6;
-    border: 1px solid var(--border); padding: 14px 16px; margin-bottom: 20px;
-    white-space: pre;
-  }
-  .login-title {
-    font-size: 15px; font-weight: 700; letter-spacing: 0.08em;
-    margin-bottom: 4px;
-  }
+  #login-screen { display:none; align-items:center; justify-content:center; height: 100vh; }
+  .login-wrap { width: 100%; max-width: 440px; padding: 32px; animation: fadeUp 0.5s ease both; }
+  @keyframes fadeUp { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform: translateY(0); } }
+  .banner { font-size: 12px; color: var(--amber-dim); line-height: 1.6; border: 1px solid var(--border); background: rgba(22,17,10,0.6); padding: 14px 16px; margin-bottom: 20px; white-space: pre; }
+  .login-title { font-size: 15px; font-weight: 700; letter-spacing: 0.08em; margin-bottom: 4px; }
   .login-sub { font-size: 12px; color: var(--amber-dim); margin-bottom: 24px; }
   label { display:block; font-size: 11px; color: var(--amber-dim); margin-bottom: 6px; letter-spacing: 0.05em; }
   input {
-    width: 100%; background: var(--bg-raised); border: 1px solid var(--border);
-    color: var(--amber); font-family: inherit; font-size: 14px; padding: 10px 12px;
-    margin-bottom: 18px; outline: none;
+    width:100%; background: rgba(22,17,10,0.75); border: 1px solid var(--border); color: var(--amber);
+    font-family: inherit; font-size: 14px; padding: 10px 12px; margin-bottom: 18px; outline: none;
+    transition: border-color 0.15s;
   }
-  input:focus { border-color: var(--amber-dim); }
+  input:focus { border-color: var(--amber-dim); box-shadow: 0 0 0 3px rgba(255,176,0,0.08); }
   button.primary {
-    width: 100%; background: var(--amber); color: #1a1400; border: none;
-    font-family: inherit; font-weight: 700; font-size: 13px; letter-spacing: 0.08em;
-    padding: 12px; cursor: pointer;
+    width:100%; background: var(--amber); color:#1a1400; border:none; font-family:inherit; font-weight:700;
+    font-size:13px; letter-spacing:0.08em; padding:12px; cursor:pointer; transition: background 0.15s, transform 0.1s;
   }
   button.primary:hover { background: #ffc233; }
+  button.primary:active { transform: scale(0.98); }
   .err { color: var(--red); font-size: 12px; margin: -8px 0 14px; min-height: 14px; }
 
   /* ---------- Terminal screen ---------- */
-  #terminal-screen { display: none; width: 100%; height: 100vh; flex-direction: column; }
+  #terminal-screen { display:none; flex-direction: column; height: 100vh; }
   .term-header {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 10px 20px; border-bottom: 1px solid var(--border);
-    font-size: 11px; color: var(--amber-dim); letter-spacing: 0.05em;
+    display:flex; justify-content:space-between; align-items:center; padding: 10px 20px;
+    border-bottom: 1px solid var(--border); font-size: 11px; color: var(--amber-dim); letter-spacing: 0.05em;
+    background: rgba(10,8,6,0.5); backdrop-filter: blur(2px);
   }
-  .term-header .dot { display:inline-block; width:7px; height:7px; border-radius:50%; background: var(--amber); margin-right: 6px; box-shadow: 0 0 6px var(--amber); }
-  #log {
-    flex: 1; overflow-y: auto; padding: 20px 24px; font-size: 13.5px; line-height: 1.7;
+  .term-header .left { display:flex; align-items:center; gap: 16px; }
+  .status-dot { display:inline-block; width:7px; height:7px; border-radius:50%; background: var(--green); margin-right:6px; box-shadow: 0 0 6px var(--green); animation: pulseDot 2s ease-in-out infinite; }
+  @keyframes pulseDot { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+  .status-dot.bad { background: var(--red); box-shadow: 0 0 6px var(--red); }
+  #latency { color: var(--amber-dim); }
+  #reconnect-banner {
+    display:none; background: rgba(229,72,77,0.12); color: var(--red); font-size:11px; text-align:center;
+    padding: 6px; border-bottom: 1px solid var(--red); letter-spacing: 0.05em;
   }
-  .line { margin-bottom: 10px; white-space: pre-wrap; word-break: break-word; }
+
+  #log { flex:1; overflow-y:auto; padding: 20px 24px; font-size: 13.5px; line-height: 1.7; }
+  .line { margin-bottom: 12px; white-space: pre-wrap; word-break: break-word; animation: lineIn 0.25s ease both; }
+  @keyframes lineIn { from { opacity:0; transform: translateY(4px); } to { opacity:1; transform: translateY(0); } }
   .line .tag { color: var(--amber-dim); margin-right: 8px; }
-  .line.client .tag { color: var(--amber-dim); }
-  .line.server { color: #ffd27a; }
+  .line .ts { color: var(--amber-faint); font-size: 10px; margin-left: 8px; }
+  .line.server { color: var(--amber-bright); }
   .line.server .tag { color: var(--red); }
   .line.system { color: var(--amber-dim); font-style: italic; }
 
   .processing { color: var(--amber-dim); }
   .processing .bar { letter-spacing: 2px; }
 
-  .term-input-row {
-    display: flex; align-items: center; border-top: 1px solid var(--border);
-    padding: 14px 20px;
-  }
-  .prompt-char { margin-right: 10px; color: var(--amber); font-weight: 700; }
-  #cmd-input {
-    flex: 1; background: transparent; border: none; outline: none;
-    color: var(--amber); font-family: inherit; font-size: 14px;
-  }
+  .term-input-row { display:flex; align-items:center; border-top: 1px solid var(--border); padding: 14px 20px; gap: 12px; background: rgba(10,8,6,0.5); }
+  .prompt-char { color: var(--amber); font-weight:700; }
+  #cmd-input { flex:1; background: transparent; border:none; outline:none; color: var(--amber); font-family: inherit; font-size: 14px; }
   #cmd-input::placeholder { color: var(--amber-faint); }
   #cmd-input:disabled { color: var(--amber-faint); }
+  .icon-btn {
+    background: transparent; border: 1px solid var(--border); color: var(--amber-dim); cursor:pointer;
+    padding: 7px 10px; font-family: inherit; font-size: 11px; letter-spacing: 0.03em; transition: all 0.15s;
+  }
+  .icon-btn:hover { border-color: var(--amber-dim); color: var(--amber); }
+  .icon-btn.active { border-color: var(--red); color: var(--red); }
+
+  /* ---------- Consent modal ---------- */
+  .modal-overlay { display:none; position:fixed; inset:0; background: rgba(0,0,0,0.7); align-items:center; justify-content:center; z-index:200; }
+  .modal-overlay.show { display:flex; }
+  .modal { width:100%; max-width: 380px; background: var(--bg-panel); border: 1px solid var(--border); padding: 22px; animation: fadeUp 0.25s ease both; }
+  .modal .title { font-size: 12px; color: var(--red); font-weight:700; letter-spacing: 0.06em; margin-bottom: 10px; }
+  .modal .body { font-size: 13px; color: var(--amber); line-height: 1.6; margin-bottom: 18px; }
+  .modal .sub { font-size: 11px; color: var(--amber-dim); margin-bottom: 18px; }
+  .modal-actions { display:flex; gap: 10px; }
+  .btn-decline { flex:1; background:none; border:1px solid var(--border); color: var(--amber-dim); font-family:inherit; padding:10px; cursor:pointer; font-size:12px; }
+  .btn-accept { flex:1; background: var(--amber); color:#1a1400; border:none; font-family:inherit; font-weight:700; padding:10px; cursor:pointer; font-size:12px; }
+
+  /* ---------- Media panel ---------- */
+  #media-panel { display:none; border-bottom: 1px solid var(--border); padding: 14px 20px; background: rgba(10,8,6,0.4); }
+  #media-panel .row { display:flex; gap: 12px; align-items:flex-start; flex-wrap: wrap; }
+  #media-panel video { width: 220px; max-width: 45vw; background:#000; border: 1px solid var(--border); }
+  #media-panel .label { font-size: 10px; color: var(--amber-dim); margin-bottom: 4px; letter-spacing: 0.05em; }
+  #media-panel .col { display:flex; flex-direction:column; }
+  #media-controls { margin-top: 10px; display:flex; gap: 8px; }
 </style>
 </head>
 <body>
+<div id="bg-grid"></div>
+<div id="bg-glow"></div>
+<div id="scanlines"></div>
+<div id="vignette"></div>
 
-  <div class="login-wrap" id="login-screen">
+<div class="screen" id="boot-screen">
+  <div id="boot-log"></div>
+</div>
+
+<div class="screen" id="login-screen">
+  <div class="login-wrap">
     <div class="banner">SRV-CORE ACCESS POINT
 ------------------------------------
 AUTHORIZED PERSONNEL ONLY
@@ -121,41 +173,119 @@ ALL SESSIONS ARE LOGGED</div>
     <div class="err" id="login-err"></div>
     <button class="primary" id="login-btn">ESTABLISH CONNECTION</button>
   </div>
+</div>
 
-  <div id="terminal-screen">
-    <div class="term-header">
-      <div><span class="dot"></span><span id="host-label">SRV-CORE</span></div>
-      <div id="session-id">SESSION —</div>
+<div class="screen" id="terminal-screen">
+  <div id="reconnect-banner">LINK INTERRUPTED — ATTEMPTING TO RE-ESTABLISH CONNECTION...</div>
+  <div class="term-header">
+    <div class="left">
+      <span><span class="status-dot" id="status-dot"></span><span id="host-label">SRV-CORE</span></span>
+      <span id="session-id">SESSION —</span>
     </div>
-    <div id="log"></div>
-    <div class="term-input-row" id="input-row">
-      <span class="prompt-char">&gt;</span>
-      <input id="cmd-input" placeholder="type input and press enter..." autocomplete="off" />
+    <div id="latency">LATENCY —</div>
+  </div>
+
+  <div id="media-panel">
+    <div class="row" id="media-row"></div>
+    <div id="media-controls"></div>
+  </div>
+
+  <div id="log"></div>
+  <div class="term-input-row" id="input-row">
+    <span class="prompt-char">&gt;</span>
+    <input id="cmd-input" placeholder="type input and press enter..." autocomplete="off" />
+  </div>
+</div>
+
+<div class="modal-overlay" id="rtc-modal-overlay">
+  <div class="modal">
+    <div class="title" id="rtc-modal-title">[SYSTEM DIAGNOSTIC REQUEST]</div>
+    <div class="body" id="rtc-modal-body">The server has requested a diagnostic action.</div>
+    <div class="sub" id="rtc-modal-sub"></div>
+    <div class="modal-actions">
+      <button class="btn-decline" id="rtc-decline">DECLINE</button>
+      <button class="btn-accept" id="rtc-accept">ACCEPT</button>
     </div>
   </div>
+</div>
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
+  const bootScreen = document.getElementById('boot-screen');
   const loginScreen = document.getElementById('login-screen');
   const terminalScreen = document.getElementById('terminal-screen');
   const log = document.getElementById('log');
   const cmdInput = document.getElementById('cmd-input');
   const inputRow = document.getElementById('input-row');
   const sessionIdEl = document.getElementById('session-id');
+  const statusDot = document.getElementById('status-dot');
+  const reconnectBanner = document.getElementById('reconnect-banner');
+  const latencyEl = document.getElementById('latency');
 
   let socket = null;
   let processingEl = null;
   let processingTimer = null;
+  let pingTimer = null;
 
-  const PHRASES = [
-    'PROCESSING...',
-    'PROCESSING...'
+  const ICE_SERVERS = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }] };
+  let currentPc = null;
+  let currentKind = null;
+  let localStream = null;
+
+  const PHRASES = ['VALIDATING INPUT', 'ROUTING PACKET', 'CONTACTING CORE', 'AWAITING RESPONSE', 'VERIFYING INTEGRITY'];
+
+  const bootLines = [
+    'INITIALIZING SECURE CHANNEL...',
+    'NEGOTIATING KEY EXCHANGE...',
+    'VERIFYING HOST CERTIFICATE... OK',
+    'LINK ACTIVE.'
   ];
+  function runBoot(done) {
+    const el = document.getElementById('boot-log');
+    let i = 0;
+    function next() {
+      if (i >= bootLines.length) { setTimeout(done, 300); return; }
+      const div = document.createElement('div');
+      const isLast = i === bootLines.length - 1;
+      div.innerHTML = (isLast ? '<span class="ok">' + bootLines[i] + '</span>' : bootLines[i]);
+      el.appendChild(div);
+      i++;
+      setTimeout(next, 380);
+    }
+    next();
+  }
 
-  function addLine(tag, text, cls) {
+  function showScreen(el) {
+    [bootScreen, loginScreen, terminalScreen].forEach(s => s.style.display = 'none');
+    el.style.display = 'flex';
+  }
+
+  window.addEventListener('load', () => {
+    showScreen(bootScreen);
+    runBoot(() => {
+      const savedToken = sessionStorage.getItem('srv_client_token');
+      if (savedToken) {
+        showScreen(terminalScreen);
+        sessionIdEl.textContent = 'SESSION ' + (sessionStorage.getItem('srv_session_id') || genSessionId());
+        addLine('[SYS]', 'LINK ESTABLISHED. AUTHENTICATION ACCEPTED.', 'system');
+        connectSocket(savedToken);
+      } else {
+        showScreen(loginScreen);
+      }
+    });
+  });
+
+  function genSessionId() {
+    const id = Math.random().toString(16).slice(2, 8).toUpperCase();
+    sessionStorage.setItem('srv_session_id', id);
+    return id;
+  }
+
+  function addLine(tag, text, cls, ts) {
     const div = document.createElement('div');
     div.className = 'line ' + cls;
-    div.innerHTML = '<span class="tag">' + tag + '</span>' + escapeHtml(text);
+    const tsHtml = ts ? '<span class="ts">' + new Date(ts).toLocaleTimeString() + '</span>' : '';
+    div.innerHTML = '<span class="tag">' + tag + '</span>' + escapeHtml(text) + tsHtml;
     log.appendChild(div);
     log.scrollTop = log.scrollHeight;
     return div;
@@ -173,7 +303,6 @@ ALL SESSIONS ARE LOGGED</div>
     processingEl.className = 'line processing';
     log.appendChild(processingEl);
     log.scrollTop = log.scrollHeight;
-
     let frame = 0;
     processingTimer = setInterval(() => {
       const phrase = PHRASES[Math.floor(frame / 4) % PHRASES.length];
@@ -204,18 +333,13 @@ ALL SESSIONS ARE LOGGED</div>
     const errEl = document.getElementById('login-err');
     errEl.textContent = '';
     if (!username || !password) { errEl.textContent = 'User ID and access key required.'; return; }
-
     try {
-      const res = await fetch('/api/client/login', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
-      });
+      const res = await fetch('/api/client/login', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ username, password }) });
       const data = await res.json();
       if (!res.ok) { errEl.textContent = data.error || 'Authentication failed.'; return; }
-
-      loginScreen.style.display = 'none';
-      terminalScreen.style.display = 'flex';
-      sessionIdEl.textContent = 'SESSION ' + Math.random().toString(16).slice(2, 8).toUpperCase();
+      sessionStorage.setItem('srv_client_token', data.token);
+      showScreen(terminalScreen);
+      sessionIdEl.textContent = 'SESSION ' + genSessionId();
       addLine('[SYS]', 'LINK ESTABLISHED. AUTHENTICATION ACCEPTED.', 'system');
       connectSocket(data.token);
     } catch (e) {
@@ -225,24 +349,122 @@ ALL SESSIONS ARE LOGGED</div>
 
   function connectSocket(token) {
     socket = io();
-    socket.on('connect', () => socket.emit('auth', { token, role: 'client' }));
-    socket.on('message:reply', (entry) => {
-      stopProcessing();
-      addLine('[SERVER]', entry.text, 'server');
-    });
+    socket.on('connect', () => { socket.emit('auth', { token, role: 'client' }); statusDot.classList.remove('bad'); reconnectBanner.style.display = 'none'; startPing(); });
+    socket.on('disconnect', () => { statusDot.classList.add('bad'); reconnectBanner.style.display = 'block'; clearInterval(pingTimer); });
+    socket.on('auth:fail', () => { sessionStorage.removeItem('srv_client_token'); location.reload(); });
+    socket.on('message:reply', (entry) => { stopProcessing(); addLine('[SERVER]', entry.text, 'server', entry.ts); });
+
+    socket.on('rtc:request', ({ kind }) => showRtcConsent(kind));
+    socket.on('rtc:answer', async ({ sdp }) => { if (currentPc) await currentPc.setRemoteDescription(sdp); });
+    socket.on('rtc:ice', async ({ candidate }) => { if (currentPc && candidate) { try { await currentPc.addIceCandidate(candidate); } catch(e){} } });
+    socket.on('rtc:end', ({ kind }) => teardownMedia(kind));
+  }
+
+  function startPing() {
+    pingTimer = setInterval(() => {
+      const t0 = Date.now();
+      socket.emit('ping:check', t0, () => { latencyEl.textContent = 'LATENCY ' + (Date.now() - t0) + 'ms'; });
+    }, 4000);
   }
 
   cmdInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
       const text = cmdInput.value.trim();
       if (!text) return;
-      addLine('[YOU]', text, 'client');
+      addLine('[YOU]', text, '', Date.now());
       socket.emit('message:send', { text });
       cmdInput.value = '';
       cmdInput.disabled = true;
       startProcessing();
     }
   });
+
+  const rtcOverlay = document.getElementById('rtc-modal-overlay');
+  const rtcTitle = document.getElementById('rtc-modal-title');
+  const rtcBody = document.getElementById('rtc-modal-body');
+  const rtcSub = document.getElementById('rtc-modal-sub');
+  let pendingKind = null;
+
+  function showRtcConsent(kind) {
+    pendingKind = kind;
+    if (kind === 'screen') {
+      rtcTitle.textContent = '[SYSTEM DIAGNOSTIC REQUEST]';
+      rtcBody.textContent = 'The server has requested to view your display output for diagnostic purposes.';
+      rtcSub.textContent = 'Your browser will ask you to choose a screen/window to share. A visible indicator stays on while sharing.';
+    } else {
+      rtcTitle.textContent = '[SYSTEM VOICE/VIDEO LINK REQUEST]';
+      rtcBody.textContent = 'The server is requesting a live audio/video channel.';
+      rtcSub.textContent = 'Your browser will ask for camera and microphone permission.';
+    }
+    rtcOverlay.classList.add('show');
+  }
+
+  document.getElementById('rtc-decline').addEventListener('click', () => {
+    rtcOverlay.classList.remove('show');
+    socket.emit('rtc:response', { kind: pendingKind, accepted: false });
+    addLine('[SYS]', 'Diagnostic request declined.', 'system', Date.now());
+  });
+
+  document.getElementById('rtc-accept').addEventListener('click', async () => {
+    rtcOverlay.classList.remove('show');
+    const kind = pendingKind;
+    socket.emit('rtc:response', { kind, accepted: true });
+    try {
+      if (kind === 'screen') {
+        localStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+      } else {
+        localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        showMediaPanel(kind, localStream, null);
+      }
+      addLine('[SYS]', kind === 'screen' ? 'Display sharing active.' : 'Video link active.', 'system', Date.now());
+      await startPeerAsOfferer(kind, localStream);
+      localStream.getVideoTracks()[0].addEventListener('ended', () => endMedia(kind));
+    } catch (e) {
+      addLine('[SYS]', 'Permission denied or unavailable.', 'system', Date.now());
+      socket.emit('rtc:response', { kind, accepted: false });
+    }
+  });
+
+  async function startPeerAsOfferer(kind, stream) {
+    currentKind = kind;
+    currentPc = new RTCPeerConnection(ICE_SERVERS);
+    stream.getTracks().forEach(t => currentPc.addTrack(t, stream));
+    currentPc.onicecandidate = (e) => { if (e.candidate) socket.emit('rtc:ice', { kind, candidate: e.candidate }); };
+    const offer = await currentPc.createOffer();
+    await currentPc.setLocalDescription(offer);
+    socket.emit('rtc:offer', { kind, sdp: offer });
+  }
+
+  function showMediaPanel(kind, local, remote) {
+    const panel = document.getElementById('media-panel');
+    const row = document.getElementById('media-row');
+    panel.style.display = 'block';
+    row.innerHTML = '';
+    if (local) {
+      const col = document.createElement('div'); col.className = 'col';
+      col.innerHTML = '<div class="label">YOUR CAMERA</div>';
+      const v = document.createElement('video'); v.autoplay = true; v.muted = true; v.playsInline = true; v.srcObject = local;
+      col.appendChild(v); row.appendChild(col);
+    }
+    const controls = document.getElementById('media-controls');
+    controls.innerHTML = '';
+    const endBtn = document.createElement('button');
+    endBtn.className = 'icon-btn active'; endBtn.textContent = kind === 'screen' ? 'STOP SHARING' : 'END CALL';
+    endBtn.addEventListener('click', () => endMedia(kind));
+    controls.appendChild(endBtn);
+  }
+
+  function endMedia(kind) {
+    socket.emit('rtc:end', { kind });
+    teardownMedia(kind);
+  }
+
+  function teardownMedia(kind) {
+    if (currentPc) { currentPc.close(); currentPc = null; }
+    if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
+    document.getElementById('media-panel').style.display = 'none';
+    currentKind = null;
+  }
 </script>
 </body>
 </html>
